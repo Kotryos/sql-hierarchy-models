@@ -1,0 +1,18 @@
+<dataset>
+    <!-- root -->
+    <nodes id="1" value="Vehicles" lft="1" rght="18"/>
+
+    <!-- level 1 -->
+    <nodes id="2" value="Motor Vehicles" lft="2" rght="11"/>
+    <nodes id="3" value="Rail Vehicles" lft="12" rght="17"/>
+
+    <!-- level 2 -->
+    <nodes id="4" value="Cars" lft="3" rght="8"/>
+    <nodes id="5" value="Buses" lft="9" rght="10"/>
+    <nodes id="6" value="Trains" lft="13" rght="14"/>
+    <nodes id="7" value="Trams" lft="15" rght="16"/>
+
+    <!-- level 3 -->
+    <nodes id="8" value="Convertibles" lft="4" rght="5"/>
+    <nodes id="9" value="Minivans" lft="6" rght="7"/>
+</dataset>
