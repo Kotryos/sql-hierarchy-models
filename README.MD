@@ -15,6 +15,7 @@ This project demonstrates Spring Data JPA powered implementation of different re
  - retrieval of all leaf nodes
  - path retrieval
  - retrieval of child nodes for a node
+ - retrieval of a node depth
 
 # How to run
 Run `mvn test` from the project root (requires Maven 3).

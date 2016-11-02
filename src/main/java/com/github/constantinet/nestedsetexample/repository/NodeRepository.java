@@ -48,4 +48,15 @@ public interface NodeRepository extends Repository<Node, Long> {
             "AND child != ?1 " +
             "AND node = ?1 ORDER BY child.left")
     List<Node> findChildNodesForNode(Node node);
+
+    /**
+     * Retrieves a depth of a node.
+     *
+     * @param node a node to retrieve depth for
+     * @return depth of a node in the range of 0...n
+     */
+    @Query("SELECT count(parent) FROM Node node, Node parent " +
+            "WHERE node.left BETWEEN parent.left AND parent.right " +
+            "AND parent != ?1 AND node = ?1")
+    int findNodeDepth(Node node);
 }

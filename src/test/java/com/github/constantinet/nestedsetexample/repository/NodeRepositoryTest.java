@@ -149,6 +149,45 @@ public class NodeRepositoryTest {
         assertThat(childNodes, empty());
     }
 
+    @Test
+    @DatabaseSetup("classpath:datasets/NodeRepository-initialData.xml")
+    public void testFindNodeDepth_whenLeafNodePassed_correctDepthReturned() {
+        // given
+        final Node leafNode = new Node(8L, "Convertibles", 4, 5);
+
+        // when
+        final int depth = nodeRepository.findNodeDepth(leafNode);
+
+        // then
+        assertThat(depth, is(3));
+    }
+
+    @Test
+    @DatabaseSetup("classpath:datasets/NodeRepository-initialData.xml")
+    public void testFindNodeDepth_whenRootNodePassed_zeroDepthReturned() {
+        // given
+        final Node rootNode = new Node(1L, "Vehicles", 1, 18);
+
+        // when
+        final int depth = nodeRepository.findNodeDepth(rootNode);
+
+        // then
+        assertThat(depth, is(0));
+    }
+
+    @Test
+    @DatabaseSetup("classpath:datasets/NodeRepository-initialData.xml")
+    public void testFindNodeDepth_whenNonExistingNodePassed_zeroDepthReturned() {
+        // given
+        final Node nonExistingNode = new Node(10L, "Some Node");
+
+        // when
+        final int depth = nodeRepository.findNodeDepth(nonExistingNode);
+
+        // then
+        assertThat(depth, is(0));
+    }
+
     private Matcher<Node> getAllOfMatcher(final Long id, final String value, final Integer left, final Integer right) {
         return allOf(
                 hasProperty("id", is(id)),
