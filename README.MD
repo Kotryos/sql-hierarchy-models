@@ -1,4 +1,6 @@
 # Introduction
+[![CI](https://github.com/Kotryos/sql-hierarchy-models/actions/workflows/ci.yml/badge.svg)](https://github.com/Kotryos/sql-hierarchy-models/actions/workflows/ci.yml)
+
 The Nested Set Model is an approach to storing hierarchical data structures in relational databases.
 It is an alternative to more common Adjacency List Model.
 The Nested Set Model has a clear advantage over Adjacency List Model for operations like finding path for a node, retrieving the whole tree, finding depth of a node etc.
