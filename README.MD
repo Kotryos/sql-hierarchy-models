@@ -1,23 +1,53 @@
-# Introduction
+# SQL Hierarchy Models
 [![CI](https://github.com/Kotryos/sql-hierarchy-models/actions/workflows/ci.yml/badge.svg)](https://github.com/Kotryos/sql-hierarchy-models/actions/workflows/ci.yml)
 
-The Nested Set Model is an approach to storing hierarchical data structures in relational databases.
-It is an alternative to more common Adjacency List Model.
-The Nested Set Model has a clear advantage over Adjacency List Model for operations like finding path for a node, retrieving the whole tree, finding depth of a node etc.
-For example, in Adjacency List it is impossible to find a path for a node with pure SQL without knowing the depth of that node.
-On the other hand, create/delete operations in Nested Set Model are much more complicated, since these operations cause the recalculation of "left" and "right" values for the whole tree.
-As a consequence to the aforementioned, the write lock on the table is necessary for create/delete, which would require a stored procedure or SERIALIZABLE isolation level (may lead to heavy performance problems).
+This project compares relational models for hierarchical data in SQL databases.
+The active codebase is being modernized around Java 21, Spring Boot, jOOQ, Flyway, JUnit 5, AssertJ, and Testcontainers.
 
-Summing up, the Nested Set Model is suitable for systems where different reads are frequent while writes are not needed or usually occur in batch at predefined time.
+The original 2016 Spring Data JPA nested-set demo is preserved in the [`legacy-2016`](https://github.com/Kotryos/sql-hierarchy-models/tree/legacy-2016) tag.
 
-This project demonstrates Spring Data JPA powered implementation of different reads in the Nested Set Model.
+## Current Model
 
-# Implemented operations
+The first modernized model is the Nested Set Model.
+It stores each node with `lft` and `rgt` interval values and currently implements:
 
- - retrieval of all leaf nodes
- - path retrieval
- - retrieval of child nodes for a node
- - retrieval of a node depth
+- retrieval of all leaf nodes
+- path retrieval
+- flattened subtree retrieval
+- node depth retrieval
 
-# How to run
-Run `mvn test` from the project root (requires Maven 3).
+The current integration tests use this tree:
+
+```text
+Vehicles [1, 18]
+|-- Motor Vehicles [2, 11]
+|   |-- Cars [3, 8]
+|   |   |-- Convertibles [4, 5]
+|   |   `-- Minivans [6, 7]
+|   `-- Buses [9, 10]
+`-- Rail Vehicles [12, 17]
+    |-- Trains [13, 14]
+    `-- Trams [15, 16]
+```
+
+## How To Run
+
+Run the full verification build from the project root:
+
+```shell
+mvn verify
+```
+
+The current baseline uses Flyway migrations and Testcontainers-backed integration tests for PostgreSQL and MySQL.
+Docker must be available to run `mvn verify`.
+
+## jOOQ Code Generation
+
+jOOQ table metadata is generated from the Flyway SQL migrations during the Maven `generate-sources` phase.
+Generated files are written to `target/generated-sources/jooq` and are not committed.
+
+Run code generation explicitly with:
+
+```shell
+mvn generate-sources
+```
