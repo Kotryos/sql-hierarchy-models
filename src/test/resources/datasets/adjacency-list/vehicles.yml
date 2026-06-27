@@ -1,0 +1,37 @@
+adjacency_list_node:
+  - id: 1
+    label: "Vehicles"
+    parent_id: null
+    sort_order: 1
+  - id: 2
+    label: "Motor Vehicles"
+    parent_id: 1
+    sort_order: 2
+  - id: 3
+    label: "Rail Vehicles"
+    parent_id: 1
+    sort_order: 7
+  - id: 4
+    label: "Cars"
+    parent_id: 2
+    sort_order: 3
+  - id: 5
+    label: "Buses"
+    parent_id: 2
+    sort_order: 6
+  - id: 6
+    label: "Trains"
+    parent_id: 3
+    sort_order: 8
+  - id: 7
+    label: "Trams"
+    parent_id: 3
+    sort_order: 9
+  - id: 8
+    label: "Convertibles"
+    parent_id: 4
+    sort_order: 4
+  - id: 9
+    label: "Minivans"
+    parent_id: 4
+    sort_order: 5

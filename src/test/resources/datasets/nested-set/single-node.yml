@@ -1,0 +1,5 @@
+nested_set_node:
+  - id: 1
+    label: "Root"
+    lft: 1
+    rgt: 2
