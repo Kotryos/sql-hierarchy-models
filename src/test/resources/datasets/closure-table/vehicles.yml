@@ -1,0 +1,105 @@
+closure_table_node:
+  - id: 1
+    label: "Vehicles"
+    sort_order: 1
+  - id: 2
+    label: "Motor Vehicles"
+    sort_order: 2
+  - id: 3
+    label: "Rail Vehicles"
+    sort_order: 7
+  - id: 4
+    label: "Cars"
+    sort_order: 3
+  - id: 5
+    label: "Buses"
+    sort_order: 6
+  - id: 6
+    label: "Trains"
+    sort_order: 8
+  - id: 7
+    label: "Trams"
+    sort_order: 9
+  - id: 8
+    label: "Convertibles"
+    sort_order: 4
+  - id: 9
+    label: "Minivans"
+    sort_order: 5
+
+closure_table_path:
+  - ancestor_id: 1
+    descendant_id: 1
+    depth: 0
+  - ancestor_id: 2
+    descendant_id: 2
+    depth: 0
+  - ancestor_id: 1
+    descendant_id: 2
+    depth: 1
+  - ancestor_id: 3
+    descendant_id: 3
+    depth: 0
+  - ancestor_id: 1
+    descendant_id: 3
+    depth: 1
+  - ancestor_id: 4
+    descendant_id: 4
+    depth: 0
+  - ancestor_id: 2
+    descendant_id: 4
+    depth: 1
+  - ancestor_id: 1
+    descendant_id: 4
+    depth: 2
+  - ancestor_id: 5
+    descendant_id: 5
+    depth: 0
+  - ancestor_id: 2
+    descendant_id: 5
+    depth: 1
+  - ancestor_id: 1
+    descendant_id: 5
+    depth: 2
+  - ancestor_id: 6
+    descendant_id: 6
+    depth: 0
+  - ancestor_id: 3
+    descendant_id: 6
+    depth: 1
+  - ancestor_id: 1
+    descendant_id: 6
+    depth: 2
+  - ancestor_id: 7
+    descendant_id: 7
+    depth: 0
+  - ancestor_id: 3
+    descendant_id: 7
+    depth: 1
+  - ancestor_id: 1
+    descendant_id: 7
+    depth: 2
+  - ancestor_id: 8
+    descendant_id: 8
+    depth: 0
+  - ancestor_id: 4
+    descendant_id: 8
+    depth: 1
+  - ancestor_id: 2
+    descendant_id: 8
+    depth: 2
+  - ancestor_id: 1
+    descendant_id: 8
+    depth: 3
+  - ancestor_id: 9
+    descendant_id: 9
+    depth: 0
+  - ancestor_id: 4
+    descendant_id: 9
+    depth: 1
+  - ancestor_id: 2
+    descendant_id: 9
+    depth: 2
+  - ancestor_id: 1
+    descendant_id: 9
+    depth: 3
