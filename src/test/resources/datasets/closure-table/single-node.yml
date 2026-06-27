@@ -1,0 +1,9 @@
+closure_table_node:
+  - id: 1
+    label: "Root"
+    sort_order: 1
+
+closure_table_path:
+  - ancestor_id: 1
+    descendant_id: 1
+    depth: 0

@@ -14,10 +14,11 @@ class ClosureTableNodeRepositoryTest {
 
     private static final String VEHICLES_DATASET = "datasets/closure-table/vehicles.yml";
     private static final String EMPTY_DATASET = "datasets/closure-table/empty.yml";
+    private static final String SINGLE_NODE_DATASET = "datasets/closure-table/single-node.yml";
 
+    @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
     abstract static class TestContract extends HierarchyRepositoryTestContract {
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findLeafNodesWhenNodesExistReturnsLeafNodes() {
             assertFindLeafNodesWhenNodesExistReturnsLeafNodes();
@@ -29,55 +30,52 @@ class ClosureTableNodeRepositoryTest {
             assertFindLeafNodesWhenNoNodesExistReturnsEmptyList();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
+        @DataSet(value = SINGLE_NODE_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
+        @Test
+        void findLeafNodesWhenOnlyRootExistsReturnsRoot() {
+            assertFindLeafNodesWhenOnlyRootExistsReturnsRoot();
+        }
+
         @Test
         void findPathWhenLeafNodeIdPassedReturnsPath() {
             assertFindPathWhenLeafNodeIdPassedReturnsPath();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findPathWhenRootNodeIdPassedReturnsEmptyList() {
             assertFindPathWhenRootNodeIdPassedReturnsEmptyList();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findPathWhenNonExistingNodeIdPassedReturnsEmptyList() {
             assertFindPathWhenNonExistingNodeIdPassedReturnsEmptyList();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findSubtreeWhenLeafNodeIdPassedReturnsEmptyList() {
             assertFindSubtreeWhenLeafNodeIdPassedReturnsEmptyList();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findSubtreeWhenRootNodeIdPassedReturnsFlattenedSubtree() {
             assertFindSubtreeWhenRootNodeIdPassedReturnsFlattenedSubtree();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findSubtreeWhenNonExistingNodeIdPassedReturnsEmptyList() {
             assertFindSubtreeWhenNonExistingNodeIdPassedReturnsEmptyList();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findDepthWhenLeafNodeIdPassedReturnsDepth() {
             assertFindDepthWhenLeafNodeIdPassedReturnsDepth();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findDepthWhenRootNodeIdPassedReturnsZero() {
             assertFindDepthWhenRootNodeIdPassedReturnsZero();
         }
 
-        @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
         @Test
         void findDepthWhenNonExistingNodeIdPassedReturnsZero() {
             assertFindDepthWhenNonExistingNodeIdPassedReturnsZero();

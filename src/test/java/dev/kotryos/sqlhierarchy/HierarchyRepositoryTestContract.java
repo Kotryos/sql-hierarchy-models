@@ -31,6 +31,10 @@ public abstract class HierarchyRepositoryTestContract {
         assertThat(findLeafIds()).isEmpty();
     }
 
+    protected void assertFindLeafNodesWhenOnlyRootExistsReturnsRoot() {
+        assertThat(findLeafIds()).containsExactly(ROOT_ID);
+    }
+
     protected void assertFindPathWhenLeafNodeIdPassedReturnsPath() {
         assertThat(findPathIds(LEAF_ID)).containsExactlyElementsOf(VEHICLE_LEAF_PATH_IDS);
     }

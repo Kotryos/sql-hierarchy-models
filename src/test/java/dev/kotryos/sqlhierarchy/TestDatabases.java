@@ -5,6 +5,7 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 
+@SuppressWarnings("resource")
 public final class TestDatabases {
 
     private static final String MYSQL_IMAGE = "mysql:8.0.36";
