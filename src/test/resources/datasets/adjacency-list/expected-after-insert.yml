@@ -26,3 +26,6 @@ adjacency_list_node:
   - id: 9
     label: "Minivans"
     parent_id: 4
+  - id: 10
+    label: "Hatchbacks"
+    parent_id: 4

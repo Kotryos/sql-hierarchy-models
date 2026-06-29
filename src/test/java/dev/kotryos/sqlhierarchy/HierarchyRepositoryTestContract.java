@@ -21,6 +21,15 @@ public abstract class HierarchyRepositoryTestContract {
     private static final List<Long> VEHICLE_ROOT_SUBTREE_IDS = List.of(2L, 4L, 8L, 9L, 5L, 3L, 6L, 7L);
     private static final int VEHICLE_LEAF_DEPTH = 3;
 
+    // Insert a new child ("Hatchbacks", id 10) under Cars (id 4) as its last child. The resulting
+    // database state is asserted per model with @ExpectedDataSet, not through the read methods.
+    private static final long INSERT_PARENT_ID = 4L;
+    private static final long INSERT_NEW_ID = 10L;
+    private static final String INSERT_NEW_LABEL = "Hatchbacks";
+
+    // Delete the leaf Minivans (id 9), a child of Cars (id 4).
+    private static final long DELETE_LEAF_ID = 9L;
+
     protected abstract HierarchyNodeRepository<? extends HierarchyNode> repository();
 
     protected void assertFindLeafNodesWhenNodesExistReturnsLeafNodes() {
@@ -52,7 +61,7 @@ public abstract class HierarchyRepositoryTestContract {
     }
 
     protected void assertFindSubtreeWhenRootNodeIdPassedReturnsFlattenedSubtree() {
-        assertThat(findSubtreeIds(ROOT_ID)).containsExactlyElementsOf(VEHICLE_ROOT_SUBTREE_IDS);
+        assertThat(findSubtreeIds(ROOT_ID)).containsExactlyInAnyOrderElementsOf(VEHICLE_ROOT_SUBTREE_IDS);
     }
 
     protected void assertFindSubtreeWhenNonExistingNodeIdPassedReturnsEmptyList() {
@@ -69,6 +78,17 @@ public abstract class HierarchyRepositoryTestContract {
 
     protected void assertFindDepthWhenNonExistingNodeIdPassedReturnsZero() {
         assertThat(findDepth(NON_EXISTING_ID)).isZero();
+    }
+
+    // Write operations only perform the change; the resulting rows are checked with
+    // @ExpectedDataSet on each model's test, independently of the read methods above.
+
+    protected void insertChild() {
+        repository().insertChild(INSERT_PARENT_ID, INSERT_NEW_ID, INSERT_NEW_LABEL);
+    }
+
+    protected void deleteLeaf() {
+        repository().deleteLeaf(DELETE_LEAF_ID);
     }
 
     private List<Long> findLeafIds() {

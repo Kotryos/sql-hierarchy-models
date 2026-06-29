@@ -1,7 +1,6 @@
 CREATE TABLE closure_table_node (
     id BIGINT NOT NULL PRIMARY KEY,
-    label VARCHAR(255) NOT NULL UNIQUE,
-    sort_order INTEGER NOT NULL UNIQUE
+    label VARCHAR(255) NOT NULL UNIQUE
 );
 
 CREATE TABLE closure_table_path (

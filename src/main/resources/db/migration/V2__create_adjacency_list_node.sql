@@ -2,7 +2,6 @@ CREATE TABLE adjacency_list_node (
     id BIGINT NOT NULL PRIMARY KEY,
     label VARCHAR(255) NOT NULL UNIQUE,
     parent_id BIGINT,
-    sort_order INTEGER NOT NULL UNIQUE,
     CONSTRAINT fk_adjacency_list_node_parent
         FOREIGN KEY (parent_id) REFERENCES adjacency_list_node (id)
 );

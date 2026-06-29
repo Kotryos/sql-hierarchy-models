@@ -1,6 +1,7 @@
 package dev.kotryos.sqlhierarchy.adjacencylist;
 
 import com.github.database.rider.core.api.dataset.DataSet;
+import com.github.database.rider.core.api.dataset.ExpectedDataSet;
 import dev.kotryos.sqlhierarchy.HierarchyNodeRepository;
 import dev.kotryos.sqlhierarchy.HierarchyRepositoryTestContract;
 import dev.kotryos.sqlhierarchy.TestDatabases;
@@ -15,6 +16,8 @@ class AdjacencyListNodeRepositoryTest {
     private static final String VEHICLES_DATASET = "datasets/adjacency-list/vehicles.yml";
     private static final String EMPTY_DATASET = "datasets/adjacency-list/empty.yml";
     private static final String SINGLE_NODE_DATASET = "datasets/adjacency-list/single-node.yml";
+    private static final String EXPECTED_AFTER_INSERT = "datasets/adjacency-list/expected-after-insert.yml";
+    private static final String EXPECTED_AFTER_DELETE = "datasets/adjacency-list/expected-after-delete.yml";
 
     @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
     abstract static class TestContract extends HierarchyRepositoryTestContract {
@@ -79,6 +82,18 @@ class AdjacencyListNodeRepositoryTest {
         @Test
         void findDepthWhenNonExistingNodeIdPassedReturnsZero() {
             assertFindDepthWhenNonExistingNodeIdPassedReturnsZero();
+        }
+
+        @ExpectedDataSet(value = EXPECTED_AFTER_INSERT, orderBy = "id")
+        @Test
+        void insertChildAddsLeafUnderParent() {
+            insertChild();
+        }
+
+        @ExpectedDataSet(value = EXPECTED_AFTER_DELETE, orderBy = "id")
+        @Test
+        void deleteLeafRemovesNode() {
+            deleteLeaf();
         }
     }
 

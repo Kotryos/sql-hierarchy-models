@@ -2,4 +2,3 @@ adjacency_list_node:
   - id: 1
     label: "Root"
     parent_id: null
-    sort_order: 1

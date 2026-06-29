@@ -1,6 +1,7 @@
 package dev.kotryos.sqlhierarchy.closuretable;
 
 import com.github.database.rider.core.api.dataset.DataSet;
+import com.github.database.rider.core.api.dataset.ExpectedDataSet;
 import dev.kotryos.sqlhierarchy.HierarchyNodeRepository;
 import dev.kotryos.sqlhierarchy.HierarchyRepositoryTestContract;
 import dev.kotryos.sqlhierarchy.TestDatabases;
@@ -15,6 +16,8 @@ class ClosureTableNodeRepositoryTest {
     private static final String VEHICLES_DATASET = "datasets/closure-table/vehicles.yml";
     private static final String EMPTY_DATASET = "datasets/closure-table/empty.yml";
     private static final String SINGLE_NODE_DATASET = "datasets/closure-table/single-node.yml";
+    private static final String EXPECTED_AFTER_INSERT = "datasets/closure-table/expected-after-insert.yml";
+    private static final String EXPECTED_AFTER_DELETE = "datasets/closure-table/expected-after-delete.yml";
 
     @DataSet(value = VEHICLES_DATASET, cleanBefore = true, disableConstraints = true, skipCleaningFor = "flyway_schema_history")
     abstract static class TestContract extends HierarchyRepositoryTestContract {
@@ -79,6 +82,18 @@ class ClosureTableNodeRepositoryTest {
         @Test
         void findDepthWhenNonExistingNodeIdPassedReturnsZero() {
             assertFindDepthWhenNonExistingNodeIdPassedReturnsZero();
+        }
+
+        @ExpectedDataSet(value = EXPECTED_AFTER_INSERT, orderBy = {"id", "ancestor_id", "descendant_id"})
+        @Test
+        void insertChildAddsLeafUnderParent() {
+            insertChild();
+        }
+
+        @ExpectedDataSet(value = EXPECTED_AFTER_DELETE, orderBy = {"id", "ancestor_id", "descendant_id"})
+        @Test
+        void deleteLeafRemovesNode() {
+            deleteLeaf();
         }
     }
 

@@ -1,28 +1,41 @@
-adjacency_list_node:
+nested_set_node:
   - id: 1
     label: "Vehicles"
-    parent_id: null
+    lft: 1
+    rgt: 20
   - id: 2
     label: "Motor Vehicles"
-    parent_id: 1
+    lft: 2
+    rgt: 13
   - id: 3
     label: "Rail Vehicles"
-    parent_id: 1
+    lft: 14
+    rgt: 19
   - id: 4
     label: "Cars"
-    parent_id: 2
+    lft: 3
+    rgt: 10
   - id: 5
     label: "Buses"
-    parent_id: 2
+    lft: 11
+    rgt: 12
   - id: 6
     label: "Trains"
-    parent_id: 3
+    lft: 15
+    rgt: 16
   - id: 7
     label: "Trams"
-    parent_id: 3
+    lft: 17
+    rgt: 18
   - id: 8
     label: "Convertibles"
-    parent_id: 4
+    lft: 4
+    rgt: 5
   - id: 9
     label: "Minivans"
-    parent_id: 4
+    lft: 6
+    rgt: 7
+  - id: 10
+    label: "Hatchbacks"
+    lft: 8
+    rgt: 9
