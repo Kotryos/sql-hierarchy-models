@@ -17,6 +17,8 @@ closure_table_node:
     label: "Convertibles"
   - id: 9
     label: "Minivans"
+  - id: 10
+    label: "Hatchbacks"
 
 closure_table_path:
   - ancestor_id: 1
@@ -93,4 +95,16 @@ closure_table_path:
     depth: 2
   - ancestor_id: 1
     descendant_id: 9
+    depth: 3
+  - ancestor_id: 10
+    descendant_id: 10
+    depth: 0
+  - ancestor_id: 4
+    descendant_id: 10
+    depth: 1
+  - ancestor_id: 2
+    descendant_id: 10
+    depth: 2
+  - ancestor_id: 1
+    descendant_id: 10
     depth: 3

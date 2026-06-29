@@ -4,6 +4,7 @@ import dev.kotryos.sqlhierarchy.HierarchyNodeRepository;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
         var child = ADJACENCY_LIST_NODE.as("child");
 
         /*
-         * SELECT node.id, node.label, node.parent_id, node.sort_order
+         * SELECT node.id, node.label, node.parent_id
          * FROM adjacency_list_node node
          * WHERE NOT EXISTS (
          *     SELECT 1
@@ -34,7 +35,7 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
          *     WHERE child.parent_id = node.id
          * )
          */
-        return dsl.select(node.ID, node.LABEL, node.PARENT_ID, node.SORT_ORDER)
+        return dsl.select(node.ID, node.LABEL, node.PARENT_ID)
                 .from(node)
                 .where(notExists(
                         selectOne()
@@ -52,16 +53,16 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
          */
         return dsl.resultQuery(
                         """
-                        WITH RECURSIVE path_nodes (id, label, parent_id, sort_order, depth) AS (
-                            SELECT id, label, parent_id, sort_order, 0
+                        WITH RECURSIVE path_nodes (id, label, parent_id, depth) AS (
+                            SELECT id, label, parent_id, 0
                             FROM adjacency_list_node
                             WHERE id = ?
                             UNION ALL
-                            SELECT parent.id, parent.label, parent.parent_id, parent.sort_order, path_nodes.depth + 1
+                            SELECT parent.id, parent.label, parent.parent_id, path_nodes.depth + 1
                             FROM adjacency_list_node parent
                             JOIN path_nodes ON path_nodes.parent_id = parent.id
                         )
-                        SELECT id, label, parent_id, sort_order
+                        SELECT id, label, parent_id
                         FROM path_nodes
                         WHERE depth > 0
                         ORDER BY depth DESC
@@ -75,23 +76,23 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
     public List<AdjacencyListNode> findSubtree(long rootId) {
         /*
          * Walk from the selected root downward by repeatedly joining children.
-         * sort_order is a stored preorder value used only for stable output.
+         * The flattened subtree is a set; order by id only for stable output.
          */
         return dsl.resultQuery(
                         """
-                        WITH RECURSIVE subtree_nodes (id, label, parent_id, sort_order, depth) AS (
-                            SELECT id, label, parent_id, sort_order, 0
+                        WITH RECURSIVE subtree_nodes (id, label, parent_id, depth) AS (
+                            SELECT id, label, parent_id, 0
                             FROM adjacency_list_node
                             WHERE id = ?
                             UNION ALL
-                            SELECT child.id, child.label, child.parent_id, child.sort_order, subtree_nodes.depth + 1
+                            SELECT child.id, child.label, child.parent_id, subtree_nodes.depth + 1
                             FROM adjacency_list_node child
                             JOIN subtree_nodes ON child.parent_id = subtree_nodes.id
                         )
-                        SELECT id, label, parent_id, sort_order
+                        SELECT id, label, parent_id
                         FROM subtree_nodes
                         WHERE depth > 0
-                        ORDER BY sort_order
+                        ORDER BY id
                         """,
                         rootId
                 )
@@ -125,12 +126,40 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
         return depth == null ? 0 : depth;
     }
 
+    @Override
+    @Transactional
+    public void insertChild(long parentId, long newId, String label) {
+        // Adjacency list writes are the cheapest: a single row that points at its parent.
+
+        /*
+         * INSERT INTO adjacency_list_node (id, label, parent_id)
+         * VALUES (:newId, :label, :parentId)
+         */
+        dsl.insertInto(ADJACENCY_LIST_NODE)
+                .columns(ADJACENCY_LIST_NODE.ID, ADJACENCY_LIST_NODE.LABEL, ADJACENCY_LIST_NODE.PARENT_ID)
+                .values(newId, label, parentId)
+                .execute();
+    }
+
+    @Override
+    @Transactional
+    public void deleteLeaf(long nodeId) {
+        // Nothing points at a leaf, so a single delete is all it takes.
+
+        /*
+         * DELETE FROM adjacency_list_node
+         * WHERE id = :nodeId
+         */
+        dsl.deleteFrom(ADJACENCY_LIST_NODE)
+                .where(ADJACENCY_LIST_NODE.ID.eq(nodeId))
+                .execute();
+    }
+
     private AdjacencyListNode mapNode(Record record, dev.kotryos.sqlhierarchy.jooq.tables.AdjacencyListNode node) {
         return new AdjacencyListNode(
                 record.get(node.ID),
                 record.get(node.LABEL),
-                record.get(node.PARENT_ID),
-                record.get(node.SORT_ORDER)
+                record.get(node.PARENT_ID)
         );
     }
 
@@ -138,8 +167,7 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
         return new AdjacencyListNode(
                 record.get("id", Long.class),
                 record.get("label", String.class),
-                record.get("parent_id", Long.class),
-                record.get("sort_order", Integer.class)
+                record.get("parent_id", Long.class)
         );
     }
 }

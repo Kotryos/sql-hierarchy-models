@@ -4,6 +4,7 @@ import dev.kotryos.sqlhierarchy.HierarchyNodeRepository;
 import org.jooq.DSLContext;
 import org.jooq.Record;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ import static dev.kotryos.sqlhierarchy.jooq.Tables.CLOSURE_TABLE_PATH;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.notExists;
 import static org.jooq.impl.DSL.selectOne;
+import static org.jooq.impl.DSL.val;
 
 @Repository
 public class ClosureTableNodeRepository implements HierarchyNodeRepository<ClosureTableNode> {
@@ -28,7 +30,7 @@ public class ClosureTableNodeRepository implements HierarchyNodeRepository<Closu
         var childPath = CLOSURE_TABLE_PATH.as("child_path");
 
         /*
-         * SELECT node.id, node.label, node.sort_order
+         * SELECT node.id, node.label
          * FROM closure_table_node node
          * WHERE NOT EXISTS (
          *     SELECT 1
@@ -37,7 +39,7 @@ public class ClosureTableNodeRepository implements HierarchyNodeRepository<Closu
          *       AND child_path.depth = 1
          * )
          */
-        return dsl.select(node.ID, node.LABEL, node.SORT_ORDER)
+        return dsl.select(node.ID, node.LABEL)
                 .from(node)
                 .where(notExists(
                         selectOne()
@@ -54,14 +56,14 @@ public class ClosureTableNodeRepository implements HierarchyNodeRepository<Closu
         var path = CLOSURE_TABLE_PATH.as("path");
 
         /*
-         * SELECT node.id, node.label, node.sort_order
+         * SELECT node.id, node.label
          * FROM closure_table_path path
          * JOIN closure_table_node node ON node.id = path.ancestor_id
          * WHERE path.descendant_id = :nodeId
          *   AND path.depth > 0
          * ORDER BY path.depth DESC
          */
-        return dsl.select(node.ID, node.LABEL, node.SORT_ORDER)
+        return dsl.select(node.ID, node.LABEL)
                 .from(path)
                 .join(node).on(node.ID.eq(path.ANCESTOR_ID))
                 .where(path.DESCENDANT_ID.eq(nodeId))
@@ -76,19 +78,19 @@ public class ClosureTableNodeRepository implements HierarchyNodeRepository<Closu
         var path = CLOSURE_TABLE_PATH.as("path");
 
         /*
-         * SELECT node.id, node.label, node.sort_order
+         * SELECT node.id, node.label
          * FROM closure_table_path path
          * JOIN closure_table_node node ON node.id = path.descendant_id
          * WHERE path.ancestor_id = :rootId
          *   AND path.depth > 0
-         * ORDER BY node.sort_order
+         * ORDER BY node.id
          */
-        return dsl.select(node.ID, node.LABEL, node.SORT_ORDER)
+        return dsl.select(node.ID, node.LABEL)
                 .from(path)
                 .join(node).on(node.ID.eq(path.DESCENDANT_ID))
                 .where(path.ANCESTOR_ID.eq(rootId))
                 .and(path.DEPTH.gt(0))
-                .orderBy(node.SORT_ORDER)
+                .orderBy(node.ID)
                 .fetch(record -> mapNode(record, node));
     }
 
@@ -109,11 +111,76 @@ public class ClosureTableNodeRepository implements HierarchyNodeRepository<Closu
         return depth == null ? 0 : depth;
     }
 
+    @Override
+    @Transactional
+    public void insertChild(long parentId, long newId, String label) {
+        var path = CLOSURE_TABLE_PATH.as("path");
+
+        /*
+         * INSERT INTO closure_table_node (id, label)
+         * VALUES (:newId, :label)
+         */
+        dsl.insertInto(CLOSURE_TABLE_NODE)
+                .columns(CLOSURE_TABLE_NODE.ID, CLOSURE_TABLE_NODE.LABEL)
+                .values(newId, label)
+                .execute();
+
+        /*
+         * Link the new node to every ancestor of its parent: take each path that ends at the
+         * parent, redirect it to the new node, and add one to the depth.
+         *
+         * INSERT INTO closure_table_path (ancestor_id, descendant_id, depth)
+         * SELECT path.ancestor_id, :newId, path.depth + 1
+         * FROM closure_table_path path
+         * WHERE path.descendant_id = :parentId
+         */
+        dsl.insertInto(CLOSURE_TABLE_PATH)
+                .columns(CLOSURE_TABLE_PATH.ANCESTOR_ID, CLOSURE_TABLE_PATH.DESCENDANT_ID, CLOSURE_TABLE_PATH.DEPTH)
+                .select(
+                        dsl.select(path.ANCESTOR_ID, val(newId), path.DEPTH.plus(1))
+                                .from(path)
+                                .where(path.DESCENDANT_ID.eq(parentId)))
+                .execute();
+
+        /*
+         * Add the node's own self-path at depth 0.
+         *
+         * INSERT INTO closure_table_path (ancestor_id, descendant_id, depth)
+         * VALUES (:newId, :newId, 0)
+         */
+        dsl.insertInto(CLOSURE_TABLE_PATH)
+                .columns(CLOSURE_TABLE_PATH.ANCESTOR_ID, CLOSURE_TABLE_PATH.DESCENDANT_ID, CLOSURE_TABLE_PATH.DEPTH)
+                .values(newId, newId, 0)
+                .execute();
+    }
+
+    @Override
+    @Transactional
+    public void deleteLeaf(long nodeId) {
+        /*
+         * Remove the leaf's paths first (they reference the node row via foreign keys). For a leaf,
+         * every path that mentions it has the node as its descendant, including its own self-path.
+         *
+         * DELETE FROM closure_table_path
+         * WHERE descendant_id = :nodeId
+         */
+        dsl.deleteFrom(CLOSURE_TABLE_PATH)
+                .where(CLOSURE_TABLE_PATH.DESCENDANT_ID.eq(nodeId))
+                .execute();
+
+        /*
+         * DELETE FROM closure_table_node
+         * WHERE id = :nodeId
+         */
+        dsl.deleteFrom(CLOSURE_TABLE_NODE)
+                .where(CLOSURE_TABLE_NODE.ID.eq(nodeId))
+                .execute();
+    }
+
     private ClosureTableNode mapNode(Record record, dev.kotryos.sqlhierarchy.jooq.tables.ClosureTableNode node) {
         return new ClosureTableNode(
                 record.get(node.ID),
-                record.get(node.LABEL),
-                record.get(node.SORT_ORDER)
+                record.get(node.LABEL)
         );
     }
 }

@@ -15,8 +15,6 @@ closure_table_node:
     label: "Trams"
   - id: 8
     label: "Convertibles"
-  - id: 9
-    label: "Minivans"
 
 closure_table_path:
   - ancestor_id: 1
@@ -81,16 +79,4 @@ closure_table_path:
     depth: 2
   - ancestor_id: 1
     descendant_id: 8
-    depth: 3
-  - ancestor_id: 9
-    descendant_id: 9
-    depth: 0
-  - ancestor_id: 4
-    descendant_id: 9
-    depth: 1
-  - ancestor_id: 2
-    descendant_id: 9
-    depth: 2
-  - ancestor_id: 1
-    descendant_id: 9
     depth: 3
