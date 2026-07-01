@@ -9,8 +9,14 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static dev.kotryos.sqlhierarchy.jooq.Tables.ADJACENCY_LIST_NODE;
+import static org.jooq.impl.DSL.field;
+import static org.jooq.impl.DSL.inline;
+import static org.jooq.impl.DSL.max;
+import static org.jooq.impl.DSL.name;
 import static org.jooq.impl.DSL.notExists;
+import static org.jooq.impl.DSL.select;
 import static org.jooq.impl.DSL.selectOne;
+import static org.jooq.impl.DSL.table;
 
 @Repository
 public class AdjacencyListNodeRepository implements HierarchyNodeRepository<AdjacencyListNode> {
@@ -48,82 +54,125 @@ public class AdjacencyListNodeRepository implements HierarchyNodeRepository<Adja
     @Override
     public List<AdjacencyListNode> findPath(long nodeId) {
         /*
-         * Walk from the selected node upward through parent_id until the root.
-         * PostgreSQL and MySQL 8 use WITH RECURSIVE for this recursive CTE.
+         * Walk upward through parent_id to the root with a recursive CTE.
+         *
+         * WITH RECURSIVE path_nodes (id, label, parent_id, depth) AS (
+         *     SELECT id, label, parent_id, 0
+         *     FROM adjacency_list_node
+         *     WHERE id = :nodeId
+         *     UNION ALL
+         *     SELECT parent.id, parent.label, parent.parent_id, path_nodes.depth + 1
+         *     FROM adjacency_list_node parent
+         *     JOIN path_nodes ON path_nodes.parent_id = parent.id
+         * )
+         * SELECT id, label, parent_id
+         * FROM path_nodes
+         * WHERE depth > 0
+         * ORDER BY depth DESC
          */
-        return dsl.resultQuery(
-                        """
-                        WITH RECURSIVE path_nodes (id, label, parent_id, depth) AS (
-                            SELECT id, label, parent_id, 0
-                            FROM adjacency_list_node
-                            WHERE id = ?
-                            UNION ALL
-                            SELECT parent.id, parent.label, parent.parent_id, path_nodes.depth + 1
-                            FROM adjacency_list_node parent
-                            JOIN path_nodes ON path_nodes.parent_id = parent.id
-                        )
-                        SELECT id, label, parent_id
-                        FROM path_nodes
-                        WHERE depth > 0
-                        ORDER BY depth DESC
-                        """,
-                        nodeId
-                )
+        var parent = ADJACENCY_LIST_NODE.as("parent");
+        var id = field(name("path_nodes", "id"), Long.class);
+        var label = field(name("path_nodes", "label"), String.class);
+        var parentId = field(name("path_nodes", "parent_id"), Long.class);
+        var depth = field(name("path_nodes", "depth"), Integer.class);
+
+        var pathNodes = name("path_nodes").fields("id", "label", "parent_id", "depth").as(
+                select(ADJACENCY_LIST_NODE.ID, ADJACENCY_LIST_NODE.LABEL, ADJACENCY_LIST_NODE.PARENT_ID, inline(0))
+                        .from(ADJACENCY_LIST_NODE)
+                        .where(ADJACENCY_LIST_NODE.ID.eq(nodeId))
+                        .unionAll(
+                                select(parent.ID, parent.LABEL, parent.PARENT_ID, depth.plus(1))
+                                        .from(parent)
+                                        .join(table(name("path_nodes"))).on(parentId.eq(parent.ID))));
+
+        return dsl.withRecursive(pathNodes)
+                .select(id, label, parentId)
+                .from(pathNodes)
+                .where(depth.gt(0))
+                .orderBy(depth.desc())
                 .fetch(this::mapNode);
     }
 
     @Override
     public List<AdjacencyListNode> findSubtree(long rootId) {
         /*
-         * Walk from the selected root downward by repeatedly joining children.
-         * The flattened subtree is a set; order by id only for stable output.
+         * Walk downward by repeatedly joining children with a recursive CTE.
+         * The flattened subtree is a set; ordering by id is only for stable output.
+         *
+         * WITH RECURSIVE subtree_nodes (id, label, parent_id, depth) AS (
+         *     SELECT id, label, parent_id, 0
+         *     FROM adjacency_list_node
+         *     WHERE id = :rootId
+         *     UNION ALL
+         *     SELECT child.id, child.label, child.parent_id, subtree_nodes.depth + 1
+         *     FROM adjacency_list_node child
+         *     JOIN subtree_nodes ON child.parent_id = subtree_nodes.id
+         * )
+         * SELECT id, label, parent_id
+         * FROM subtree_nodes
+         * WHERE depth > 0
+         * ORDER BY id
          */
-        return dsl.resultQuery(
-                        """
-                        WITH RECURSIVE subtree_nodes (id, label, parent_id, depth) AS (
-                            SELECT id, label, parent_id, 0
-                            FROM adjacency_list_node
-                            WHERE id = ?
-                            UNION ALL
-                            SELECT child.id, child.label, child.parent_id, subtree_nodes.depth + 1
-                            FROM adjacency_list_node child
-                            JOIN subtree_nodes ON child.parent_id = subtree_nodes.id
-                        )
-                        SELECT id, label, parent_id
-                        FROM subtree_nodes
-                        WHERE depth > 0
-                        ORDER BY id
-                        """,
-                        rootId
-                )
+        var child = ADJACENCY_LIST_NODE.as("child");
+        var id = field(name("subtree_nodes", "id"), Long.class);
+        var label = field(name("subtree_nodes", "label"), String.class);
+        var parentId = field(name("subtree_nodes", "parent_id"), Long.class);
+        var depth = field(name("subtree_nodes", "depth"), Integer.class);
+
+        var subtreeNodes = name("subtree_nodes").fields("id", "label", "parent_id", "depth").as(
+                select(ADJACENCY_LIST_NODE.ID, ADJACENCY_LIST_NODE.LABEL, ADJACENCY_LIST_NODE.PARENT_ID, inline(0))
+                        .from(ADJACENCY_LIST_NODE)
+                        .where(ADJACENCY_LIST_NODE.ID.eq(rootId))
+                        .unionAll(
+                                select(child.ID, child.LABEL, child.PARENT_ID, depth.plus(1))
+                                        .from(child)
+                                        .join(table(name("subtree_nodes"))).on(child.PARENT_ID.eq(id))));
+
+        return dsl.withRecursive(subtreeNodes)
+                .select(id, label, parentId)
+                .from(subtreeNodes)
+                .where(depth.gt(0))
+                .orderBy(id)
                 .fetch(this::mapNode);
     }
 
     @Override
     public int findDepth(long nodeId) {
         /*
-         * Same upward recursive CTE as findPath, but returns the maximum depth.
+         * Same upward recursive CTE as findPath, returning the maximum depth.
          * Missing nodes produce no rows, so the repository maps NULL to 0.
+         *
+         * WITH RECURSIVE path_nodes (id, parent_id, depth) AS (
+         *     SELECT id, parent_id, 0
+         *     FROM adjacency_list_node
+         *     WHERE id = :nodeId
+         *     UNION ALL
+         *     SELECT parent.id, parent.parent_id, path_nodes.depth + 1
+         *     FROM adjacency_list_node parent
+         *     JOIN path_nodes ON path_nodes.parent_id = parent.id
+         * )
+         * SELECT MAX(depth)
+         * FROM path_nodes
          */
-        Integer depth = dsl.resultQuery(
-                        """
-                        WITH RECURSIVE path_nodes (id, parent_id, depth) AS (
-                            SELECT id, parent_id, 0
-                            FROM adjacency_list_node
-                            WHERE id = ?
-                            UNION ALL
-                            SELECT parent.id, parent.parent_id, path_nodes.depth + 1
-                            FROM adjacency_list_node parent
-                            JOIN path_nodes ON path_nodes.parent_id = parent.id
-                        )
-                        SELECT MAX(depth) AS depth
-                        FROM path_nodes
-                        """,
-                        nodeId
-                )
-                .fetchOne("depth", Integer.class);
+        var parent = ADJACENCY_LIST_NODE.as("parent");
+        var parentId = field(name("path_nodes", "parent_id"), Long.class);
+        var depth = field(name("path_nodes", "depth"), Integer.class);
 
-        return depth == null ? 0 : depth;
+        var pathNodes = name("path_nodes").fields("id", "parent_id", "depth").as(
+                select(ADJACENCY_LIST_NODE.ID, ADJACENCY_LIST_NODE.PARENT_ID, inline(0))
+                        .from(ADJACENCY_LIST_NODE)
+                        .where(ADJACENCY_LIST_NODE.ID.eq(nodeId))
+                        .unionAll(
+                                select(parent.ID, parent.PARENT_ID, depth.plus(1))
+                                        .from(parent)
+                                        .join(table(name("path_nodes"))).on(parentId.eq(parent.ID))));
+
+        Integer maxDepth = dsl.withRecursive(pathNodes)
+                .select(max(depth))
+                .from(pathNodes)
+                .fetchOne(0, Integer.class);
+
+        return maxDepth == null ? 0 : maxDepth;
     }
 
     @Override
